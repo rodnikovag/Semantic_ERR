@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Error Checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        
+        h1 { margin-bottom: 20px; color: #333; }
+        
+        .input-area { margin-bottom: 20px; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #0056b3; }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+        
+        .correct { border-color: #28a745; background: #f8fff9; }
+        .error { border-color: #dc3545; background: #fff8f8; }
+        
+        .status {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .correct .status { color: #28a745; }
+        .error .status { color: #dc3545; }
+        
+        .details { margin-top: 10px; }
+        .detail-item { margin: 5px 0; }
+        .label { font-weight: bold; color: #666; }
+        
+        .examples {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .example {
+            margin: 5px 0;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .example:hover { background: #e9ecef; }
+    </style>
+</head>
+<body>
+    <h1>Проверка семантических ошибок</h1>
+    
+    <div class="input-area">
+        <textarea id="sentence-input" placeholder="Введите предложение на английском"></textarea>
+        <button id="check-btn">Проверка предложения</button>
+    </div>
+    
+    <div id="result" class="result" style="display: none;"></div>
+    
+    <div class="примеры">
+        <h3>ПРИМЕРЫ:</h3>
+        <div id="список примеров">
+            <div class="example" data-sentence="The teenager does tour at most nine restaurants.">
+                The teenager does tour at most nine restaurants.
+            </div>
+            <div class="example" data-sentence="No teenager does tour at most nine restaurants.">
+                No teenager does tour at most nine restaurants.
+            </div>
+            <div class="example" data-sentence="Every senator notices at most four windows.">
+                Every senator notices at most four windows.
+            </div>
+            <div class="example" data-sentence="No senator notices at most four windows.">
+                No senator notices at most four windows.
+            </div>
+            <div class="example" data-sentence="The doctor brought at most eight gates.">
+                The doctor brought at most eight gates.
+            </div>
+            <div class="example" data-sentence="No doctor brought at most eight gates.">
+                No doctor brought at most eight gates.
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('check-btn').addEventListener('click', function() {
+            const sentence = document.getElementById('sentence-input').value.trim();
+            if (!sentence) {
+                alert('Пожалуйста, введите предложение');
+                return;
+            }
+            
+            this.disabled = true;
+            this.textContent = 'Проверка';
+            
+            fetch('/detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sentence: sentence })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error status">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                const statusClass = data.has_error ? 'error' : 'correct';
+                const statusText = data.has_error ? 'Найдена семантическая ошибка!' : ' Ошибок нет';
+                
+                let similarHtml = '';
+                if (data.top_similar && data.top_similar.length > 0) {
+                    similarHtml = '<div class="detail-item"><span class="label">Наиболее похоже:</span><br>';
+                    data.top_similar.forEach((item, index) => {
+                        similarHtml += `${index + 1}. ${item.sentence} (${item.similarity})<br>`;
+                    });
+                    similarHtml += '</div>';
+                }
+                
+                resultDiv.className = `result ${statusClass}`;
+                resultDiv.innerHTML = `
+                    <div class="status">${statusText}</div>
+                    <div class="details">
+                        <div class="detail-item"><span class="label">Предложение:</span> ${data.sentence}</div>
+                        <div class="detail-item"><span class="label">Сходство:</span> ${data.similarity}</div>
+                        <div class="detail-item"><span class="label">Категория:</span> ${data.category}</div>
+                        ${similarHtml}
+                    </div>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = 
+                    `<div class="error status">error: ${error.message}</div>`;
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = 'Проверить предложение';
+            });
+        });
+        
+        // Примеры
+        document.querySelectorAll('.example').forEach(example => {
+            example.addEventListener('click', function() {
+                const sentence = this.getAttribute('data-sentence');
+                document.getElementById('sentence-input').value = sentence;
+                document.getElementById('sentence-input').focus();
+            });
+        });
+        
+        // Enter для отправки
+        document.getElementById('sentence-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('check-btn').click();
+            }
+        });
+    </script>
+</body>
+</html>
