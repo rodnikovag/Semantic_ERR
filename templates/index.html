@@ -6,7 +6,13 @@
     <title>Semantic Error Checker</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            background-color: #ffe6f0; 
+        }
         
         h1 { margin-bottom: 20px; color: #333; }
         
@@ -24,14 +30,14 @@
         button {
             padding: 10px 20px;
             font-size: 16px;
-            background: #007bff;
+            background: #8a2be2; 
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
         }
-        button:hover { background: #0056b3; }
+        button:hover { background: #7a1ad2; } 
         
         .result {
             margin-top: 20px;
@@ -72,18 +78,18 @@
     </style>
 </head>
 <body>
-    <h1>Проверка семантических ошибок</h1>
+    <h1>проверка семантических ошибок</h1>
     
     <div class="input-area">
-        <textarea id="sentence-input" placeholder="Введите предложение на английском"></textarea>
-        <button id="check-btn">Проверка предложения</button>
+        <textarea id="sentence-input" placeholder="введите предложение на английском"></textarea>
+        <button id="check-btn">проверка предложения</button>
     </div>
     
     <div id="result" class="result" style="display: none;"></div>
     
-    <div class="примеры">
+    <div class="examples"> 
         <h3>ПРИМЕРЫ:</h3>
-        <div id="список примеров">
+        <div id="example-list"> 
             <div class="example" data-sentence="The teenager does tour at most nine restaurants.">
                 The teenager does tour at most nine restaurants.
             </div>
@@ -109,12 +115,12 @@
         document.getElementById('check-btn').addEventListener('click', function() {
             const sentence = document.getElementById('sentence-input').value.trim();
             if (!sentence) {
-                alert('Пожалуйста, введите предложение');
+                alert('пожалуйста, введите предложение');
                 return;
             }
             
             this.disabled = true;
-            this.textContent = 'Проверка';
+            this.textContent = 'проверка';
             
             fetch('/detect', {
                 method: 'POST',
@@ -132,11 +138,11 @@
                 }
                 
                 const statusClass = data.has_error ? 'error' : 'correct';
-                const statusText = data.has_error ? 'Найдена семантическая ошибка!' : ' Ошибок нет';
+                const statusText = data.has_error ? 'найдена семантическая ошибка!' : ' ошибок нет';
                 
                 let similarHtml = '';
                 if (data.top_similar && data.top_similar.length > 0) {
-                    similarHtml = '<div class="detail-item"><span class="label">Наиболее похоже:</span><br>';
+                    similarHtml = '<div class="detail-item"><span class="label">наиболее похоже:</span><br>';
                     data.top_similar.forEach((item, index) => {
                         similarHtml += `${index + 1}. ${item.sentence} (${item.similarity})<br>`;
                     });
@@ -147,9 +153,9 @@
                 resultDiv.innerHTML = `
                     <div class="status">${statusText}</div>
                     <div class="details">
-                        <div class="detail-item"><span class="label">Предложение:</span> ${data.sentence}</div>
-                        <div class="detail-item"><span class="label">Сходство:</span> ${data.similarity}</div>
-                        <div class="detail-item"><span class="label">Категория:</span> ${data.category}</div>
+                        <div class="detail-item"><span class="label">предложение:</span> ${data.sentence}</div>
+                        <div class="detail-item"><span class="label">сходство:</span> ${data.similarity}</div>
+                        <div class="detail-item"><span class="label">категория:</span> ${data.category}</div>
                         ${similarHtml}
                     </div>
                 `;
@@ -160,7 +166,7 @@
             })
             .finally(() => {
                 this.disabled = false;
-                this.textContent = 'Проверить предложение';
+                this.textContent = 'проверить предложение';
             });
         });
         
