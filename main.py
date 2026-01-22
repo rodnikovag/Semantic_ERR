@@ -279,5 +279,8 @@ if __name__ == '__main__':
     print("Система исправления семантических ошибок")
     print(f"device: {corrector.device}")
     print("running on: http://localhost:5000")
-    
+        # тест модели
+    test_cases = [
+        "I study at University Witte"
+    ]
     app.run(debug=True, port=5000)
