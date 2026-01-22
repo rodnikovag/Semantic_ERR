@@ -276,27 +276,8 @@ def correct():
     return jsonify(response)
 
 if __name__ == '__main__':
-
-    print("детекция семантических ошибок в английском языке")
-    print(f"device: {detector.device}")
-    print(f"vocabulary size: {len(detector.tokenizer.word2idx)}")
+    print("Система исправления семантических ошибок")
+    print(f"device: {corrector.device}")
     print("running on: http://localhost:5000")
-    
-    # тест модели
-    test_cases = [
-        "The teenager does tour at most nine restaurants.",
-        "No teenager does tour at most nine restaurants.",
-        "No teacher assigned more than five tasks.",
-        "Every senator notices at most four windows.",
-        "No senator notices at most four windows."
-    ]
-    
-    for test in test_cases:
-        result = detector.detect_error(test)
-        status = "correct" if (test in detector.correct_sentences) != result['has_error'] else "error"
-        print(f"\n{status} - '{test}'")
-        print(f"predict: {'ERROR' if result['has_error'] else 'OK'} (conf: {result['confidence']:.2f})")
-        print(f"category: {result['category']}")
-        print(f"most similar: {result['most_similar'][:60]}...")
     
     app.run(debug=True, port=5000)
