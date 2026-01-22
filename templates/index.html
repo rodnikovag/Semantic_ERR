@@ -3,170 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semantic Error Checker</title>
+    <title>Semantic Error Corrector</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
         body { 
-            font-family: Arial, sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             max-width: 800px; 
             margin: 20px auto; 
             padding: 20px; 
-            background-color: #ffe6f0; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+            min-height: 100vh;
         }
         
-        h1 { margin-bottom: 20px; color: #333; }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            backdrop-filter: blur(4px);
+        }
         
-        .input-area { margin-bottom: 20px; }
+        h1 { 
+            margin-bottom: 25px; 
+            color: #2c3e50; 
+            text-align: center;
+            font-weight: 600;
+            font-size: 28px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .input-area { 
+            margin-bottom: 25px; 
+        }
+        
         textarea {
             width: 100%;
-            height: 100px;
-            padding: 10px;
+            height: 120px;
+            padding: 15px;
             font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+            border: 2px solid #e1e5eb;
+            border-radius: 8px;
             resize: vertical;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 16px;
-            background: #8a2be2; 
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        button:hover { background: #7a1ad2; } 
+        
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.7;
+            transform: none;
+            cursor: not-allowed;
+        }
         
         .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            border: 2px solid #ddd;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e1e5eb;
+            animation: fadeIn 0.5s ease;
+            background: #f8fff9;
         }
         
-        .correct { border-color: #28a745; background: #f8fff9; }
-        .error { border-color: #dc3545; background: #fff8f8; }
-        
-        .status {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .correct .status { color: #28a745; }
-        .error .status { color: #dc3545; }
         
-        .details { margin-top: 10px; }
-        .detail-item { margin: 5px 0; }
-        .label { font-weight: bold; color: #666; }
+        .original,
+        .corrected {
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #e1e5eb;
+        }
+        
+        .original-label,
+        .corrected-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .original-text {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .corrected-text {
+            color: #28a745;
+            font-weight: 500;
+        }
         
         .examples {
-            margin-top: 30px;
-            padding: 15px;
+            margin-top: 35px;
+            padding: 20px;
             background: #f8f9fa;
-            border-radius: 5px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 18px;
+            font-weight: 600;
         }
         
         .example {
-            margin: 5px 0;
-            padding: 5px;
+            margin: 8px 0;
+            padding: 10px 15px;
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            color: #2c3e50;
+            font-size: 14px;
         }
-        .example:hover { background: #e9ecef; }
+        
+        .example:hover { 
+            background: #e9ecef; 
+            transform: translateX(3px);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>проверка семантических ошибок</h1>
-    
-    <div class="input-area">
-        <textarea id="sentence-input" placeholder="введите предложение на английском"></textarea>
-        <button id="check-btn">проверка предложения</button>
-    </div>
-    
-    <div id="result" class="result" style="display: none;"></div>
-    
-    <div class="examples"> 
-        <h3>ПРИМЕРЫ:</h3>
-        <div id="example-list"> 
-            <div class="example" data-sentence="The teenager does tour at most nine restaurants.">
-                The teenager does tour at most nine restaurants.
+    <div class="container">
+        <h1>Исправление семантических ошибок</h1>
+        
+        <div class="input-area">
+            <textarea id="sentence-input" placeholder="Введите предложение на английском языке..."></textarea>
+            <button id="correct-btn">Исправить предложение</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;">
+            <div class="original">
+                <span class="original-label">Оригинал:</span>
+                <div class="original-text" id="original-text"></div>
             </div>
-            <div class="example" data-sentence="No teenager does tour at most nine restaurants.">
-                No teenager does tour at most nine restaurants.
+            <div class="corrected">
+                <span class="corrected-label">Исправлено:</span>
+                <div class="corrected-text" id="corrected-text"></div>
             </div>
-            <div class="example" data-sentence="Every senator notices at most four windows.">
-                Every senator notices at most four windows.
-            </div>
-            <div class="example" data-sentence="No senator notices at most four windows.">
-                No senator notices at most four windows.
-            </div>
-            <div class="example" data-sentence="The doctor brought at most eight gates.">
-                The doctor brought at most eight gates.
-            </div>
-            <div class="example" data-sentence="No doctor brought at most eight gates.">
-                No doctor brought at most eight gates.
+        </div>
+        
+        <div class="examples"> 
+            <h3>Примеры для тестирования:</h3>
+            <div id="example-list"> 
+                <div class="example" data-sentence="I study at University Witte">
+                    I study at University Witte
+                </div>
+                <div class="example" data-sentence="She works in Microsoft company">
+                    She works in Microsoft company
+                </div>
+                <div class="example" data-sentence="No teenager does tour at most nine restaurants.">
+                    No teenager does tour at most nine restaurants.
+                </div>
+                <div class="example" data-sentence="He drank a book">
+                    He drank a book
+                </div>
+                <div class="example" data-sentence="She has car red">
+                    She has car red
+                </div>
             </div>
         </div>
     </div>
     
     <script>
-        document.getElementById('check-btn').addEventListener('click', function() {
+        document.getElementById('correct-btn').addEventListener('click', function() {
             const sentence = document.getElementById('sentence-input').value.trim();
             if (!sentence) {
-                alert('пожалуйста, введите предложение');
+                alert('Пожалуйста, введите предложение');
                 return;
             }
             
-            this.disabled = true;
-            this.textContent = 'проверка';
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Исправление...';
             
-            fetch('/detect', {
+            fetch('/correct', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sentence: sentence })
             })
             .then(response => response.json())
             .then(data => {
-                const resultDiv = document.getElementById('result');
-                resultDiv.style.display = 'block';
-                
                 if (data.error) {
-                    resultDiv.innerHTML = `<div class="error status">Error: ${data.error}</div>`;
+                    alert('Ошибка: ' + data.error);
                     return;
                 }
                 
-                const statusClass = data.has_error ? 'error' : 'correct';
-                const statusText = data.has_error ? 'найдена семантическая ошибка!' : ' ошибок нет';
-                
-                let similarHtml = '';
-                if (data.top_similar && data.top_similar.length > 0) {
-                    similarHtml = '<div class="detail-item"><span class="label">наиболее похоже:</span><br>';
-                    data.top_similar.forEach((item, index) => {
-                        similarHtml += `${index + 1}. ${item.sentence} (${item.similarity})<br>`;
-                    });
-                    similarHtml += '</div>';
-                }
-                
-                resultDiv.className = `result ${statusClass}`;
-                resultDiv.innerHTML = `
-                    <div class="status">${statusText}</div>
-                    <div class="details">
-                        <div class="detail-item"><span class="label">предложение:</span> ${data.sentence}</div>
-                        <div class="detail-item"><span class="label">сходство:</span> ${data.similarity}</div>
-                        <div class="detail-item"><span class="label">категория:</span> ${data.category}</div>
-                        ${similarHtml}
-                    </div>
-                `;
+                document.getElementById('original-text').textContent = data.original;
+                document.getElementById('corrected-text').textContent = data.corrected;
+                document.getElementById('result').style.display = 'block';
             })
             .catch(error => {
-                document.getElementById('result').innerHTML = 
-                    `<div class="error status">error: ${error.message}</div>`;
+                alert('Ошибка при исправлении: ' + error.message);
             })
             .finally(() => {
-                this.disabled = false;
-                this.textContent = 'проверить предложение';
+                btn.disabled = false;
+                btn.textContent = 'Исправить предложение';
             });
         });
         
@@ -183,7 +282,7 @@
         document.getElementById('sentence-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                document.getElementById('check-btn').click();
+                document.getElementById('correct-btn').click();
             }
         });
     </script>
