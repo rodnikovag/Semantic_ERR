@@ -136,44 +136,7 @@ class IndependentSeq2SeqModel(nn.Module):
         )
         return self.output_proj(output)
 
-# improved transformer encoder из модели
-class ImprovedTransformerEncoder(nn.Module):
-    def __init__(self, vocab_size, d_model=256, nhead=8, num_layers=4, dim_feedforward=1024, dropout=0.1, max_len=512):
-        super().__init__()
-        
-        self.embedding = nn.Embedding(vocab_size, d_model)
-        self.pos_encoder = PositionalEncoding(d_model, max_len)
-        self.dropout = nn.Dropout(dropout)
-        
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=nhead,
-            dim_feedforward=dim_feedforward,
-            dropout=dropout,
-            activation='gelu',
-            batch_first=True
-        )
-        
-        self.transformer = nn.TransformerEncoder(
-            encoder_layer,
-            num_layers=num_layers
-        )
-        
-        self.layer_norm = nn.LayerNorm(d_model)
-        
-        for p in self.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
-    
-    def forward(self, src, src_mask=None):
-        src_emb = self.embedding(src) * math.sqrt(self.embedding.embedding_dim)
-        src_emb = self.pos_encoder(src_emb)
-        src_emb = self.dropout(src_emb)
-        
-        output = self.transformer(src_emb, src_key_padding_mask=src_mask)
-        output = self.layer_norm(output)
-        
-        return output
+
 
 # advanced contrastive model из модели
 class AdvancedContrastiveModel(nn.Module):
