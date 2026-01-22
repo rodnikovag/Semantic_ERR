@@ -2,16 +2,20 @@ from flask import Flask, render_template, request, jsonify
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 import math
+import pickle
+import os
+import warnings
+
+warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
 
 app = Flask(__name__)
 
-class ImprovedTokenizer:
-
-    # простой токенизатор    
+class Seq2SeqTokenizer:
     def __init__(self, word2idx=None):
-        self.word2idx = word2idx or {}
+        if word2idx is None:
+            word2idx = {}
+        self.word2idx = word2idx
         self.idx2word = {idx: word for word, idx in word2idx.items()}
         self.special_tokens = {
             '[PAD]': 0,
