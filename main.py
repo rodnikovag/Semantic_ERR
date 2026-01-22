@@ -52,7 +52,6 @@ class Seq2SeqTokenizer:
         }
 
 
-# encoding из модели
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=512):
         super().__init__()
@@ -69,6 +68,49 @@ class PositionalEncoding(nn.Module):
     
     def forward(self, x):
         return x + self.pe[:, :x.size(1)]
+
+class IndependentSeq2SeqModel(nn.Module):
+    def __init__(self, vocab_size, d_model=256, nhead=8, num_layers=6, max_len=64):
+        super().__init__()
+        self.d_model = d_model
+        
+        # Encoder
+        self.encoder_embedding = nn.Embedding(vocab_size, d_model)
+        self.encoder_pos = PositionalEncoding(d_model, max_len)
+        self.encoder_dropout = nn.Dropout(0.1)
+        
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=d_model * 4,
+            dropout=0.1,
+            activation='gelu',
+            batch_first=True
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        
+        # Decoder
+        self.decoder_embedding = nn.Embedding(vocab_size, d_model)
+        self.decoder_pos = PositionalEncoding(d_model, max_len)
+        self.decoder_dropout = nn.Dropout(0.1)
+        
+        decoder_layer = nn.TransformerDecoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=d_model * 4,
+            dropout=0.1,
+            activation='gelu',
+            batch_first=True
+        )
+        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
+        self.output_proj = nn.Linear(d_model, vocab_size)
+        
+        self._init_weights()
+    
+    def _init_weights(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
 
 # improved transformer encoder из модели
 class ImprovedTransformerEncoder(nn.Module):
