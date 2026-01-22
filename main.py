@@ -51,7 +51,6 @@ class Seq2SeqTokenizer:
             'attention_mask': torch.tensor(attention_mask, dtype=torch.long)
         }
 
-
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=512):
         super().__init__()
@@ -111,15 +110,15 @@ class IndependentSeq2SeqModel(nn.Module):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
-
+    
     def forward(self, src_input_ids, src_key_padding_mask, tgt_input_ids, tgt_key_padding_mask):
-        # encoder
+        # Encoder
         src_emb = self.encoder_embedding(src_input_ids) * math.sqrt(self.d_model)
         src_emb = self.encoder_pos(src_emb)
         src_emb = self.encoder_dropout(src_emb)
         memory = self.encoder(src_emb, src_key_padding_mask=src_key_padding_mask)
         
-        # decoder
+        # Decoder
         tgt_emb = self.decoder_embedding(tgt_input_ids) * math.sqrt(self.d_model)
         tgt_emb = self.decoder_pos(tgt_emb)
         tgt_emb = self.decoder_dropout(tgt_emb)
@@ -135,7 +134,6 @@ class IndependentSeq2SeqModel(nn.Module):
             memory_key_padding_mask=src_key_padding_mask
         )
         return self.output_proj(output)
-
 
 class Seq2SeqCorrector:
     def __init__(self, model_path='independent_seq2seq_corrector.pth', tokenizer_path='seq2seq_tokenizer.pkl'):
@@ -279,8 +277,15 @@ if __name__ == '__main__':
     print("Система исправления семантических ошибок")
     print(f"device: {corrector.device}")
     print("running on: http://localhost:5000")
-        # тест модели
+    
+    # тест модели
     test_cases = [
-        "I study at University Witte"
+
     ]
+    
+    for test in test_cases:
+        corrected = corrector.correct_sentence(test)
+        print(f"\nБыло:  {test}")
+        print(f"Стало: {corrected}")
+    
     app.run(debug=True, port=5000)
