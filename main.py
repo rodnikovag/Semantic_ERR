@@ -138,49 +138,6 @@ class IndependentSeq2SeqModel(nn.Module):
 
 
 
-# advanced contrastive model из модели
-class AdvancedContrastiveModel(nn.Module):
-    def __init__(self, vocab_size, d_model=192, projection_dim=96):
-        super().__init__()
-        
-        self.encoder = ImprovedTransformerEncoder(
-            vocab_size=vocab_size,
-            d_model=d_model,
-            nhead=8,
-            num_layers=4,
-            dim_feedforward=d_model * 4  
-        )
-        
-        self.pooling = nn.Sequential(
-            nn.Linear(d_model, d_model * 2),  
-            nn.GELU(),
-            nn.Dropout(0.1),
-            nn.Linear(d_model * 2, projection_dim)  
-        )
-        
-        self.output_norm = nn.LayerNorm(projection_dim)
-    
-    def forward(self, input_ids, attention_mask=None):
-        if attention_mask is not None:
-            key_padding_mask = (attention_mask == 0)
-        else:
-            key_padding_mask = None
-        
-        encoder_output = self.encoder(input_ids, key_padding_mask)
-        
-        if key_padding_mask is not None:
-            padding_mask = ~key_padding_mask.unsqueeze(-1)
-            sum_embeddings = torch.sum(encoder_output * padding_mask, dim=1)
-            num_tokens = padding_mask.sum(dim=1)
-            pooled = sum_embeddings / torch.clamp(num_tokens, min=1e-9)
-        else:
-            pooled = torch.mean(encoder_output, dim=1)
-        
-        projected = self.pooling(pooled)
-        normalized = F.normalize(projected, p=2, dim=1)
-        
-        return normalized
-
 # семантический детектор 
 class SemanticErrorDetector:
     
