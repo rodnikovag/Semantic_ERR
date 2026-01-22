@@ -28,8 +28,6 @@ class Seq2SeqTokenizer:
         return len(self.word2idx)
     
     def encode(self, text, max_length=64):
-
-        # кодирование текста в индексы
         words = text.lower().split()
         tokens = ['[CLS]'] + words + ['[SEP]']
         
@@ -49,21 +47,10 @@ class Seq2SeqTokenizer:
         attention_mask = [1 if idx != self.word2idx.get('[PAD]', 0) else 0 for idx in indices]
         
         return {
-            'input_ids': torch.tensor(indices, dtype=torch.long).unsqueeze(0),
-            'attention_mask': torch.tensor(attention_mask, dtype=torch.long).unsqueeze(0)
+            'input_ids': torch.tensor(indices, dtype=torch.long),
+            'attention_mask': torch.tensor(attention_mask, dtype=torch.long)
         }
-    
-    @classmethod
-    def from_checkpoint(cls, tokenizer_data):
-        
-        # создание токенизатора из данных чекпоинта
-        if isinstance(tokenizer_data, cls):
-            return tokenizer_data
-        elif isinstance(tokenizer_data, dict):
-            word2idx = tokenizer_data.get('word2idx', {})
-            return cls(word2idx)
-        else:
-            return cls()
+
 
 # encoding из модели
 class PositionalEncoding(nn.Module):
