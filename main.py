@@ -258,28 +258,19 @@ corrector = Seq2SeqCorrector()
 def index():
     return render_template('index.html')
 
-@app.route('/detect', methods=['POST'])
-def detect():
+@app.route('/correct', methods=['POST'])
+def correct():
     sentence = request.json.get('sentence', '').strip()
     
     if not sentence:
         return jsonify({'error': 'no sentence provided'})
     
-    result = detector.detect_error(sentence)
+    corrected = corrector.correct_sentence(sentence)
     
     response = {
-        'sentence': result['sentence'],
-        'has_error': result['has_error'],
-        'confidence': result['confidence'],
-        'similarity': result['similarity'],
-        'category': result['category'],
-        'most_similar': result['most_similar'],
-        'top_similar': result['top_similar'],
-        'model_type': result['model_type'],
-        'details': {
-            'avg_similarity_correct': result.get('avg_similarity_correct', 0),
-            'avg_similarity_incorrect': result.get('avg_similarity_incorrect', 0)
-        }
+        'original': sentence,
+        'corrected': corrected,
+        'model_type': 'IndependentSeq2SeqModel'
     }
     
     return jsonify(response)
