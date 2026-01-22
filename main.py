@@ -112,6 +112,30 @@ class IndependentSeq2SeqModel(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
+    def forward(self, src_input_ids, src_key_padding_mask, tgt_input_ids, tgt_key_padding_mask):
+        # encoder
+        src_emb = self.encoder_embedding(src_input_ids) * math.sqrt(self.d_model)
+        src_emb = self.encoder_pos(src_emb)
+        src_emb = self.encoder_dropout(src_emb)
+        memory = self.encoder(src_emb, src_key_padding_mask=src_key_padding_mask)
+        
+        # decoder
+        tgt_emb = self.decoder_embedding(tgt_input_ids) * math.sqrt(self.d_model)
+        tgt_emb = self.decoder_pos(tgt_emb)
+        tgt_emb = self.decoder_dropout(tgt_emb)
+        
+        tgt_len = tgt_input_ids.size(1)
+        causal_mask = torch.triu(torch.ones(tgt_len, tgt_len), diagonal=1).bool()
+        causal_mask = causal_mask.to(tgt_input_ids.device)
+        
+        output = self.decoder(
+            tgt_emb, memory,
+            tgt_mask=causal_mask,
+            tgt_key_padding_mask=tgt_key_padding_mask,
+            memory_key_padding_mask=src_key_padding_mask
+        )
+        return self.output_proj(output)
+
 # improved transformer encoder из модели
 class ImprovedTransformerEncoder(nn.Module):
     def __init__(self, vocab_size, d_model=256, nhead=8, num_layers=4, dim_feedforward=1024, dropout=0.1, max_len=512):
