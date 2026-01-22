@@ -137,7 +137,122 @@ class IndependentSeq2SeqModel(nn.Module):
         return self.output_proj(output)
 
 
+class Seq2SeqCorrector:
+    def __init__(self, model_path='independent_seq2seq_corrector.pth', tokenizer_path='seq2seq_tokenizer.pkl'):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"device: {self.device}")
+        
+        # загрузка модели и токенизатора
+        self.model, self.tokenizer = self.load_model_and_tokenizer(model_path, tokenizer_path)
+        if self.model and self.tokenizer:
+            self.model.eval()
+            print("seq2seq model and tokenizer loaded successfully")
+        else:
+            print("Failed to load model or tokenizer")
+    
+    def load_model_and_tokenizer(self, model_path, tokenizer_path):
+        try:
+            # загрузка токенизатора
+            if os.path.exists(tokenizer_path):
+                with open(tokenizer_path, 'rb') as f:
+                    tokenizer = pickle.load(f)
+                print(f"Tokenizer loaded with {tokenizer.get_vocab_size()} tokens")
+            else:
+                print(f"Tokenizer file {tokenizer_path} not found!")
+                return None, None
+            
+            # загрузка модели
+            state_dict = torch.load(model_path, map_location=self.device)
+            vocab_size = tokenizer.get_vocab_size()
+            
+            model = IndependentSeq2SeqModel(
+                vocab_size=vocab_size,
+                d_model=256,
+                num_layers=6
+            )
+            
+            model.load_state_dict(state_dict)
+            model = model.to(self.device)
+            
+            return model, tokenizer
+            
+        except Exception as e:
+            print(f"Error loading model and tokenizer: {e}")
+            import traceback
+            traceback.print_exc()
+            return None, None
+    
+    def correct_sentence(self, sentence, max_len=64):
+        if not self.model or not self.tokenizer:
+            return "[Модель не загружена]"
+        
+        try:
+            with torch.no_grad():
+                # кодируем входное предложение
+                src_enc = self.tokenizer.encode(sentence, max_len)
+                src_ids = src_enc['input_ids'].to(self.device)
+                src_mask = src_enc['attention_mask'].to(self.device)
+                
+                # булевые маски
+                src_key_padding_mask = (src_mask == 0)
+                
+                # жадная генерация
+                generated = [self.tokenizer.word2idx.get('[CLS]', 2)]
+                repeated_count = 0
+                last_token = None
+                
+                for _ in range(max_len - 1):
+                    tgt_tensor = torch.tensor([generated], dtype=torch.long).to(self.device)
+                    # для decoder: все позиции активны (нет padding)
+                    tgt_key_padding_mask = torch.zeros(len(generated), dtype=torch.bool).to(self.device)
+                    
+                    # размерность батча
+                    logits = self.model(
+                        src_ids.unsqueeze(0), 
+                        src_key_padding_mask.unsqueeze(0),
+                        tgt_tensor, 
+                        tgt_key_padding_mask.unsqueeze(0)
+                    )
+                    next_token = logits[0, -1].argmax().item()
+                    
+                    # предотвращение повторений
+                    if next_token == last_token:
+                        repeated_count += 1
+                        if repeated_count > 3:
+                            break
+                    else:
+                        repeated_count = 0
+                        last_token = next_token
+                    
+                    generated.append(next_token)
+                    
+                    if next_token == self.tokenizer.word2idx.get('[SEP]', 3):
+                        break
+                
+                # декодирование
+                tokens = []
+                for idx in generated[1:-1]:  # пропускаем [CLS] и [SEP]
+                    if idx in self.tokenizer.idx2word:
+                        tokens.append(self.tokenizer.idx2word[idx])
+                    else:
+                        tokens.append('[UNK]')
+                
+                result = ' '.join(tokens)
+                
+                # восстановление регистра первого слова
+                if sentence and sentence[0].isupper():
+                    result = result.capitalize()
+                
+                return result
+                
+        except Exception as e:
+            print(f"Correction error: {e}")
+            import traceback
+            traceback.print_exc()
+            return sentence
 
+# инициализация корректора
+corrector = Seq2SeqCorrector()
 
 @app.route('/')
 def index():
